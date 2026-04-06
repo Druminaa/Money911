@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@200;400;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-headline: "Manrope", sans-serif;
+
+  --color-primary: #0145f2;
+  --color-primary-container: #d0dcfd;
+  --color-primary-dim: #0138c4;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #012a99;
+
+  --color-secondary: #006499;
+  --color-secondary-container: #cde5ff;
+  --color-on-secondary: #f6f9ff;
+  --color-on-secondary-container: #005685;
+
+  --color-tertiary: #9f403a;
+  --color-tertiary-container: #f8847b;
+  --color-on-tertiary: #fff7f6;
+  --color-on-tertiary-container: #540809;
+
+  --color-surface: #f8fafb;
+  --color-surface-dim: #d4dbde;
+  --color-surface-bright: #f8fafb;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f0f4f6;
+  --color-surface-container: #eaeff0;
+  --color-surface-container-high: #e3e9eb;
+  --color-surface-container-highest: #dce4e6;
+
+  --color-on-surface: #2c3436;
+  --color-on-surface-variant: #596063;
+  --color-outline: #747c7e;
+  --color-outline-variant: #acb3b6;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface font-sans antialiased;
+    font-size: 15px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-headline tracking-tight;
+  }
+
+  /* Hide scrollbar globally */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes coin-flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+
+  50% {
+    transform: rotateY(180deg);
+  }
+
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+.animate-coin-flip {
+  animation: coin-flip 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
