@@ -10,6 +10,9 @@ export default function Settings() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -28,6 +31,7 @@ export default function Settings() {
       setLoading(true);
       const userData = await userAPI.me();
       setUser(userData);
+      setImagePreview(userData.profile_image || null);
       setFormData({
         full_name: userData.full_name || '',
         phone: userData.phone || '',
@@ -67,6 +71,56 @@ export default function Settings() {
     });
   };
 
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      error('File Too Large', 'Please select an image under 2MB');
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      error('Invalid File', 'Please select an image file');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+        setImagePreview(base64String);
+        
+        // Upload to server
+        try {
+          await userAPI.update({ profile_image: base64String });
+          success('Image Uploaded', 'Profile picture updated successfully');
+          fetchUserData();
+          // Trigger TopBar refresh by dispatching custom event
+          window.dispatchEvent(new Event('userUpdated'));
+        } catch (err: any) {
+          error('Upload Failed', err.message || 'Could not upload image');
+          setImagePreview(user?.profile_image || null);
+        } finally {
+          setUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      error('Upload Failed', 'Could not process image');
+      setUploading(false);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   if (loading) {
     return (
       <div className="p-5 max-w-5xl mx-auto w-full">
@@ -99,8 +153,28 @@ export default function Settings() {
         <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 text-center md:text-left mb-6">
           <div className="relative group">
             <div className="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border-4 border-primary-container shadow-lg bg-primary-container flex items-center justify-center">
-              <User className="w-10 h-10 text-primary" />
+              {uploading ? (
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              ) : imagePreview ? (
+                <img src={imagePreview} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold text-primary">{getInitials(user?.full_name || 'User')}</span>
+              )}
             </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute bottom-0 right-0 w-7 h-7 bg-primary text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform disabled:opacity-50"
+            >
+              <Camera className="w-3.5 h-3.5" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
           </div>
           <div className="flex-1">
             <h3 className="text-lg md:text-xl font-bold text-on-surface">{user?.full_name || 'User'}</h3>

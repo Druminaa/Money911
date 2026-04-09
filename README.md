@@ -42,20 +42,24 @@
 ### 💳 Transaction Management
 - Add, edit, and delete income/expense transactions
 - Categorize transactions (Food, Transport, Entertainment, etc.)
-- Real-time transaction history
+- Real-time transaction history with MongoDB integration
 - Search and filter capabilities
+- **CSV Export** - Download filtered transactions with timestamps
+- **PDF Export** - Generate printable transaction reports
 
 ### 📊 Budget Tracking
 - Create monthly budgets by category
-- Visual progress indicators
-- Budget vs. actual spending comparison
-- Overspending alerts
+- Visual progress indicators with real spending data
+- Budget vs. actual spending comparison from MongoDB
+- **Over-budget warnings** with red indicators
+- Real-time spending calculations
 
 ### 🎯 Financial Goals
 - Set savings goals with target amounts
 - Track progress with visual indicators
 - Update goal contributions
 - Goal completion tracking
+- **Real-time progress** on Dashboard
 
 ### 💵 Cash Flow Management
 - Track cash in/out transactions
@@ -68,25 +72,54 @@
 - Track money borrowed from others
 - Due date reminders
 - Loan status tracking
+- **Card grid layout** (3-column responsive design)
+- Summary cards with total lent/borrowed amounts
 
 ### 📈 Analytics & Insights
-- Monthly spending trends
-- Category-wise breakdown
+- **Real MongoDB data integration**
+- Monthly spending trends with dynamic calculations
+- Category-wise breakdown with percentages
 - Income vs. expense charts
-- Financial health overview
-- Interactive data visualizations
+- Financial health overview with KPIs
+- Interactive donut charts
+- Trend indicators (up/down arrows)
 
 ### 👤 User Management
 - Secure authentication (JWT + Google OAuth)
 - User profile management
 - Password encryption
 - Session management
+- **Profile image upload** (base64 storage, max 2MB)
+- **Profile image display** in TopBar with initials fallback
+- Real-time profile updates
+
+### 💎 Subscription Management
+- **Free tier** ($0/month) with basic features
+- **Pro tier** ($9.99/month) with advanced features
+- Monthly/Yearly billing toggle with 20% savings
+- Feature comparison table
+- FAQ section
+
+### 🎧 Support System
+- **Ticket submission** (name, email, category, subject, message)
+- Ticket history with status indicators
+- FAQ accordion
+- Contact options (Email, Phone, Live Chat)
+
+### 🔔 Notifications
+- **4 notification types** (Budget, Goals, Payments, System)
+- Filter by type and read/unread status
+- Mark as read/delete actions
+- Notification preferences
+- Relative timestamps
 
 ### 🎨 Modern UI/UX
 - Responsive design (Mobile, Tablet, Desktop)
 - Material Design 3 principles
 - Smooth animations with Framer Motion
-- Dark/Light theme support
+- Consistent color scheme (Primary #0145f2, Secondary #006499)
+- Typography system (Manrope headlines, Inter body)
+- Mobile-first responsive font scaling
 - Intuitive navigation
 
 ---
@@ -275,13 +308,15 @@ pip install -r requirements.txt
 ### 4. Configure Environment Variables
 Create `backend/.env`:
 ```env
-MONGODB_URL=mongodb://localhost:27017
-DATABASE_NAME=financial_atelier
+MONGODB_URL=mongodb+srv://Druminaa:Dipak%40141202@money911.ivts6m3.mongodb.net/
+DATABASE_NAME=Druminaa
 SECRET_KEY=your-super-secret-key-change-in-production
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
 ```
+
+**Note**: The project uses MongoDB Atlas cloud database. For local development, you can use `mongodb://localhost:27017` instead.
 
 ### 5. Run Backend Server
 ```bash
@@ -405,7 +440,8 @@ npm run preview
   password: String (hashed),
   name: String,
   created_at: DateTime,
-  google_id: String (optional)
+  google_id: String (optional),
+  profile_image: String (optional, base64 encoded, max 2MB)
 }
 ```
 
@@ -552,6 +588,9 @@ the-financial-atelier/
 │   │   │   ├── BorrowLoan.tsx
 │   │   │   ├── Analytics.tsx
 │   │   │   ├── Settings.tsx
+│   │   │   ├── Subscription.tsx
+│   │   │   ├── Support.tsx
+│   │   │   ├── Notifications.tsx
 │   │   │   ├── AuthPage.tsx
 │   │   │   └── LandingPage.tsx
 │   │   ├── lib/               # Utilities
@@ -652,9 +691,73 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
+## 🎯 Implementation Status
+
+### ✅ Phase 1 (7 Features - Complete)
+1. ✅ Goals page form submission fix
+2. ✅ Dashboard real MongoDB data integration
+3. ✅ Transactions CSV/PDF export
+4. ✅ Analytics real data connection
+5. ✅ Budget real data with over-budget warnings
+6. ✅ Borrow/Loan card grid layout
+7. ✅ TopBar real user data with profile images
+
+### ✅ Phase 2 (4 Features - Complete)
+1. ✅ Settings image upload (base64, max 2MB)
+2. ✅ Subscription page (Free/Pro tiers)
+3. ✅ Support page (ticket system + FAQ)
+4. ✅ Notifications page (filtering + management)
+
+### 📊 Overall Progress: 11/11 Features (100%)
+
+---
+
+## 🎨 Design System
+
+### Color Palette
+- **Primary**: #0145f2 (Blue)
+- **Secondary**: #006499 (Teal)
+- **Tertiary**: #9f403a (Red)
+- **Success**: Green tones
+- **Warning**: Orange tones
+- **Error**: Red tones
+
+### Typography
+- **Headlines**: Manrope font family
+- **Body**: Inter font family
+- **Font Scale**: 10px (timestamps) to 24px (titles)
+- **Responsive**: Mobile-first with `md:` breakpoint at 768px
+
+### Spacing & Layout
+- **Mobile**: 12-16px padding
+- **Desktop**: 20-32px padding
+- **Cards**: rounded-2xl (16px radius)
+- **Buttons**: rounded-full
+- **Grid**: 3-column responsive layout
+
+---
+
+## 🔄 Recent Updates
+
+### Latest Changes
+- Fixed font sizes across all pages for better readability
+- Implemented mobile-first responsive font scaling
+- Added profile image upload with base64 storage
+- Created Subscription, Support, and Notifications pages
+- Integrated real MongoDB data across Dashboard, Analytics, Budget
+- Added CSV/PDF export functionality to Transactions
+- Converted Borrow/Loan to card grid layout
+
+### Known Limitations
+- Subscription, Support, and Notifications use mock data (backend endpoints pending)
+- Dark/Light theme toggle not yet implemented
+- Email notifications not yet configured
+
+---
+
 ## 📧 Support
 
-For issues and questions, please open an issue on GitHub.
+For issues and questions, please open an issue on GitHub or use the in-app Support page.
 
 ---
 
@@ -662,5 +765,6 @@ For issues and questions, please open an issue on GitHub.
 
 **Built with ❤️ using React, FastAPI, and MongoDB**
 
+**Money911 - The Financial Atelier**
+
 </div>
-# Money911

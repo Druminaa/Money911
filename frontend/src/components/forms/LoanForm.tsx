@@ -49,10 +49,6 @@ export default function LoanForm({ onClose, onSubmit, type }: LoanFormProps) {
     e.preventDefault();
     if (!formData.duration) { error('Missing Duration', 'Please select a loan duration.'); return; }
     onSubmit(formData);
-    success(
-      type === 'lend' ? 'Capital Lent' : 'Loan Requested',
-      `$${formData.amount} ${type === 'lend' ? 'lent to' : 'requested from'} ${formData.name}.`
-    );
     onClose();
   };
 

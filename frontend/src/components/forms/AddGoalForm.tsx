@@ -47,8 +47,14 @@ export default function AddGoalForm({ onClose, onSubmit }: AddGoalFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.category) { error('Missing Category', 'Please select a goal category.'); return; }
-    onSubmit(formData);
-    success('Goal Created', `"${formData.title}" has been added to your aspirations.`);
+    const payload = {
+      title: formData.title,
+      category: formData.category,
+      target_amount: parseFloat(formData.targetAmount),
+      current_amount: parseFloat(formData.currentAmount) || 0,
+      deadline: formData.deadline || null
+    };
+    onSubmit(payload);
     onClose();
   };
 

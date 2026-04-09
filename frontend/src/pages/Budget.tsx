@@ -30,8 +30,9 @@ export default function Budget() {
 
   const handleSubmit = async (data: any) => {
     try {
-      await budgetsAPI.create(data);
+      await budgetsAPI.create({ category: data.category, amount: parseFloat(data.amount), period: data.period });
       success('Budget Created', `${data.category} budget added`);
+      setShowForm(false);
       fetchBudgets();
     } catch (err: any) {
       error('Failed to Create', err.message || 'Could not create budget');
@@ -107,13 +108,14 @@ export default function Budget() {
             {budgets.map((budget, i) => {
               const iconMap: any = { Housing: Home, 'Food & Dining': Utensils, Entertainment: Film, Transportation: Car };
               const Icon = iconMap[budget.category] || Home;
-              const spent = 0; // You can track actual spending separately
+              const spent = budget.spent || 0;
               const progress = Math.min((spent / budget.amount) * 100, 100);
+              const isOverBudget = progress > 100;
               return (
-              <div key={budget.id} className="bg-surface-container-lowest p-5 md:p-6 rounded-xl transition-all hover:translate-x-1 group">
+              <div key={budget.id} className="bg-surface-container-lowest p-5 md:p-6 rounded-xl transition-all hover:translate-x-1 group border border-outline-variant/10 shadow-sm">
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-3 md:gap-4">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center bg-primary-container text-primary">
+                    <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center", isOverBudget ? 'bg-tertiary-container text-tertiary' : 'bg-primary-container text-primary')}>
                       <Icon className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
                     <div>
@@ -122,18 +124,19 @@ export default function Budget() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm md:text-base font-bold text-on-surface">${spent.toFixed(2)}</p>
+                    <p className={cn("text-sm md:text-base font-bold", isOverBudget ? 'text-tertiary' : 'text-on-surface')}>${spent.toFixed(2)}</p>
                     <p className="text-[10px] md:text-xs text-on-surface-variant">of ${budget.amount.toFixed(2)}</p>
                   </div>
                 </div>
                 <div className="h-1.5 md:h-2 bg-surface-container-high rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
+                    animate={{ width: `${Math.min(progress, 100)}%` }}
                     transition={{ duration: 1, delay: i * 0.1 }}
-                    className="h-full rounded-full bg-primary" 
+                    className={cn("h-full rounded-full", isOverBudget ? 'bg-tertiary' : 'bg-primary')} 
                   />
                 </div>
+                {isOverBudget && <p className="text-[10px] text-tertiary font-bold mt-2">⚠️ Over budget by ${(spent - budget.amount).toFixed(2)}</p>}
               </div>
             )})}
           </div>

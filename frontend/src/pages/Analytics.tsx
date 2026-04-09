@@ -204,10 +204,10 @@ export default function Analytics() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { icon: TrendingUp,   label: 'Net Growth',    value: '+12.4%',  sub: '+$4,230',  color: 'text-primary',   bg: 'bg-primary-container/20',   trend: true },
-          { icon: Wallet,       label: 'Savings Rate',  value: '35%',     sub: 'Top 5%',   color: 'text-secondary', bg: 'bg-secondary-container/20', trend: true },
-          { icon: DollarSign,   label: 'Total Income',  value: '$12,450', sub: 'This period', color: 'text-primary', bg: 'bg-surface-container-low',  trend: true },
-          { icon: TrendingDown, label: 'Total Expense', value: '$8,432',  sub: '-2.4% MoM', color: 'text-tertiary', bg: 'bg-surface-container-low',  trend: false },
+          { icon: TrendingUp,   label: 'Net Growth',    value: summary ? `+${summary.growth_pct}%` : '+0%',  sub: summary ? `+$${summary.net_surplus.toFixed(0)}` : '$0',  color: 'text-primary',   bg: 'bg-primary-container/20',   trend: true },
+          { icon: Wallet,       label: 'Savings Rate',  value: summary ? `${summary.savings_rate}%` : '0%',     sub: 'This period',   color: 'text-secondary', bg: 'bg-secondary-container/20', trend: true },
+          { icon: DollarSign,   label: 'Total Income',  value: summary ? `$${summary.total_income.toLocaleString()}` : '$0', sub: 'This period', color: 'text-primary', bg: 'bg-surface-container-low',  trend: true },
+          { icon: TrendingDown, label: 'Total Expense', value: summary ? `$${summary.total_expense.toLocaleString()}` : '$0',  sub: summary ? `Top: ${summary.top_category}` : 'N/A', color: 'text-tertiary', bg: 'bg-surface-container-low',  trend: false },
         ].map((m, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
             className={cn('p-4 rounded-2xl relative overflow-hidden group cursor-default', m.bg)}>
@@ -294,12 +294,18 @@ export default function Analytics() {
                 ))}
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-base font-black">$8,432</span>
+                <span className="text-base font-black">${summary ? summary.total_expense.toLocaleString() : '0'}</span>
                 <span className="text-[8px] text-on-surface-variant font-bold uppercase tracking-wider">Spent</span>
               </div>
             </div>
             <div className="w-full space-y-2">
-              {CATEGORIES.map((c, i) => (
+              {(categories.length > 0 ? categories.slice(0, 4).map((c: any) => ({
+                label: c._id,
+                amount: `$${c.total.toFixed(0)}`,
+                pct: summary ? Math.round((c.total / summary.total_expense) * 100) : 0,
+                color: ['#0145f2', '#006499', '#9f403a', '#f8847b'][categories.indexOf(c) % 4],
+                bg: ['bg-primary', 'bg-secondary', 'bg-tertiary', 'bg-tertiary-container'][categories.indexOf(c) % 4]
+              })) : CATEGORIES).map((c: any, i: number) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />
                   <span className="text-xs font-medium flex-1">{c.label}</span>

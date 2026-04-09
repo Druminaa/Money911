@@ -52,6 +52,7 @@ class UserUpdate(BaseModel):
     phone: Optional[str] = None
     address: Optional[str] = None
     currency: Optional[str] = None
+    profile_image: Optional[str] = None  # base64 string
 
 # ── Transaction ───────────────────────────────────────
 class TransactionCreate(BaseModel):

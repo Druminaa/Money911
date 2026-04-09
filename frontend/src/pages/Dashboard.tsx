@@ -2,12 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TrendingUp, Landmark, Utensils, Smartphone, Wallet, Car, ShieldCheck, Plus, X } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
-import { transactionsAPI, userAPI } from '@/src/lib/api';
+import { transactionsAPI, userAPI, goalsAPI, analyticsAPI } from '@/src/lib/api';
 
-const TRENDS = {
-  '6M': [40, 55, 45, 80, 60, 70],
-  '1Y': [40, 55, 45, 80, 60, 70, 50, 65, 75, 55, 40, 85],
-};
 const MONTHS = {
   '6M': ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
   '1Y': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -15,42 +11,68 @@ const MONTHS = {
 
 export default function Dashboard() {
   const [trendPeriod, setTrendPeriod] = useState<'6M' | '1Y'>('6M');
-  const [savings, setSavings] = useState(15000);
-  const target = 20000;
-  const progress = Math.min(Math.round((savings / target) * 100), 100);
-  const [showAddFunds, setShowAddFunds] = useState(false);
-  const [addAmount, setAddAmount] = useState('');
   const [summary, setSummary] = useState({ total_income: 0, total_expense: 0, net_surplus: 0 });
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [userName, setUserName] = useState('Julian');
+  const [goals, setGoals] = useState<any[]>([]);
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [trends, setTrends] = useState<number[]>([40, 55, 45, 80, 60, 70]);
 
   useEffect(() => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    calculateTrends();
+  }, [monthlyData, trendPeriod]);
+
+  const calculateTrends = () => {
+    if (monthlyData.length === 0) return;
+    const period = trendPeriod === '6M' ? 6 : 12;
+    const recentMonths = monthlyData.slice(-period);
+    const maxExpense = Math.max(...recentMonths.map((m: any) => m.expense || 0), 1);
+    const normalized = recentMonths.map((m: any) => ((m.expense || 0) / maxExpense) * 100);
+    setTrends(normalized.length > 0 ? normalized : [40, 55, 45, 80, 60, 70]);
+  };
+
   const fetchData = async () => {
     try {
-      const [summaryRes, transRes, userRes] = await Promise.all([
+      const [summaryRes, transRes, userRes, goalsRes, monthlyRes] = await Promise.all([
         transactionsAPI.summary(),
         transactionsAPI.getAll({ page: 1 }),
-        userAPI.me().catch(() => null)
+        userAPI.me().catch(() => null),
+        goalsAPI.getAll().catch(() => ({ data: [] })),
+        analyticsAPI.monthly().catch(() => [])
       ]);
       setSummary(summaryRes);
       setRecentTransactions((transRes.data || []).slice(0, 5));
       if (userRes) setUserName(userRes.full_name?.split(' ')[0] || 'Julian');
+      setGoals(goalsRes.data || []);
+      
+      // Process monthly data
+      const processed = processMonthlyData(monthlyRes);
+      setMonthlyData(processed);
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
     }
   };
 
-  const handleAddFunds = () => {
-    const amt = parseFloat(addAmount);
-    if (!isNaN(amt) && amt > 0) {
-      setSavings(prev => Math.min(prev + amt, target));
-      setAddAmount('');
-      setShowAddFunds(false);
-    }
+  const processMonthlyData = (data: any[]) => {
+    const monthMap: any = {};
+    data.forEach((item: any) => {
+      const month = item._id?.month || 0;
+      if (!monthMap[month]) monthMap[month] = { income: 0, expense: 0 };
+      if (item._id?.type === 'income') monthMap[month].income = item.total;
+      if (item._id?.type === 'expense') monthMap[month].expense = item.total;
+    });
+    return Object.keys(monthMap).map(m => ({ month: parseInt(m), ...monthMap[m] })).sort((a, b) => a.month - b.month);
   };
+
+  // Get first active goal for Swiss Alps section
+  const activeGoal = goals.length > 0 ? goals[0] : null;
+  const progress = activeGoal ? Math.min((activeGoal.current_amount / activeGoal.target_amount) * 100, 100) : 75;
+  const savings = activeGoal ? activeGoal.current_amount : 15000;
+  const target = activeGoal ? activeGoal.target_amount : 20000;
 
   return (
     <div className="p-3 md:p-5 space-y-4 md:space-y-5 max-w-7xl mx-auto w-full">
@@ -137,13 +159,13 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="relative h-36 md:h-48 w-full flex items-end gap-1 px-1">
-            {TRENDS[trendPeriod].map((height, i) => (
+            {trends.map((height, i) => (
               <motion.div
                 key={`${trendPeriod}-${i}`}
                 initial={{ height: 0 }}
                 animate={{ height: `${height}%` }}
                 transition={{ delay: i * 0.05, duration: 0.5 }}
-                className={cn('flex-1 rounded-t-md transition-all hover:opacity-80', i === 3 ? 'bg-primary' : 'bg-primary/20')}
+                className={cn('flex-1 rounded-t-md transition-all hover:opacity-80', i === trends.length - 1 ? 'bg-primary' : 'bg-primary/20')}
               />
             ))}
           </div>
@@ -152,11 +174,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Swiss Alps Retreat */}
+        {/* Goal Progress */}
         <div className="bg-secondary-container/30 rounded-2xl p-4 md:p-5 flex flex-col justify-between overflow-hidden relative">
           <div className="relative z-10">
-            <h3 className="text-sm md:text-base font-bold tracking-tight mb-1">Swiss Alps Retreat</h3>
-            <p className="text-[10px] md:text-xs text-on-secondary-container/80 leading-relaxed">Savings for the summer 2024 expedition.</p>
+            <h3 className="text-sm md:text-base font-bold tracking-tight mb-1">{activeGoal ? activeGoal.title : 'Swiss Alps Retreat'}</h3>
+            <p className="text-[10px] md:text-xs text-on-secondary-container/80 leading-relaxed">{activeGoal ? activeGoal.category : 'Savings for the summer 2024 expedition.'}</p>
             <div className="mt-4 flex justify-center">
               <div className="relative w-28 h-28 md:w-32 md:h-32">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
@@ -171,7 +193,7 @@ export default function Dashboard() {
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl md:text-2xl font-black">{progress}%</span>
+                  <span className="text-xl md:text-2xl font-black">{Math.round(progress)}%</span>
                   <span className="text-[8px] uppercase font-bold text-on-surface-variant">Completed</span>
                 </div>
               </div>
@@ -179,38 +201,10 @@ export default function Dashboard() {
           </div>
           <div className="mt-3 flex justify-between items-center z-10">
             <span className="text-[10px] md:text-xs font-bold text-on-surface-variant">${savings.toLocaleString()} / ${target.toLocaleString()}</span>
-            <button onClick={() => setShowAddFunds(true)} className="p-1.5 bg-white rounded-full text-secondary shadow-md hover:scale-110 transition-transform">
+            <a href="/goals" className="p-1.5 bg-white rounded-full text-secondary shadow-md hover:scale-110 transition-transform">
               <Plus className="w-4 h-4" />
-            </button>
+            </a>
           </div>
-
-          <AnimatePresence>
-            {showAddFunds && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[1.5rem] md:rounded-[2rem] p-6 flex flex-col justify-center gap-4 z-20"
-              >
-                <div className="flex justify-between items-center">
-                  <h4 className="font-bold text-on-surface">Add Funds</h4>
-                  <button onClick={() => setShowAddFunds(false)}><X className="w-5 h-5 text-on-surface-variant" /></button>
-                </div>
-                <input
-                  type="number"
-                  placeholder="Enter amount"
-                  value={addAmount}
-                  onChange={e => setAddAmount(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleAddFunds()}
-                  className="w-full border border-outline-variant rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <button
-                  onClick={handleAddFunds}
-                  className="w-full py-3 bg-secondary text-on-secondary rounded-full font-bold text-sm hover:opacity-90 transition-opacity"
-                >Add to Savings</button>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
 

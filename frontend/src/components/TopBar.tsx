@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, Download, Settings as SettingsIcon, Menu, Landmark, User, LogOut, ChevronDown, CreditCard, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { userAPI } from '@/src/lib/api';
 
 interface TopBarProps {
   title?: string;
@@ -12,8 +13,20 @@ export default function TopBar({ title, onMenuClick }: TopBarProps) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchUser();
+    
+    // Listen for user updates from Settings page
+    const handleUserUpdate = () => {
+      fetchUser();
+    };
+    window.addEventListener('userUpdated', handleUserUpdate);
+    return () => window.removeEventListener('userUpdated', handleUserUpdate);
+  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -24,11 +37,29 @@ export default function TopBar({ title, onMenuClick }: TopBarProps) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const fetchUser = async () => {
+    try {
+      const user = await userAPI.me();
+      setUserData(user);
+    } catch (err) {
+      console.error('Failed to fetch user:', err);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const userName = userData?.full_name || 'User';
+  const userEmail = userData?.email || 'user@atelier.com';
+  const userImage = userData?.profile_image || null;
+  const shortName = userName.split(' ').slice(0, 2).map((n: string, i: number) => i === 0 ? n : n[0] + '.').join(' ');
+
   const menuItems = [
     { icon: User, label: 'My Profile', action: () => { navigate('/settings'); setDropdownOpen(false); } },
-    { icon: CreditCard, label: 'Subscription', action: () => { navigate('/settings'); setDropdownOpen(false); } },
+    { icon: CreditCard, label: 'Subscription', action: () => { navigate('/subscription'); setDropdownOpen(false); } },
     { icon: SettingsIcon, label: 'Settings', action: () => { navigate('/settings'); setDropdownOpen(false); } },
-    { icon: HelpCircle, label: 'Support', action: () => setDropdownOpen(false) },
+    { icon: HelpCircle, label: 'Support', action: () => { navigate('/support'); setDropdownOpen(false); } },
   ];
 
   const notifications = [
@@ -36,6 +67,11 @@ export default function TopBar({ title, onMenuClick }: TopBarProps) {
     { title: 'Goal Milestone', desc: 'Swiss Alps Retreat is 75% complete!', time: '1h ago', dot: 'bg-primary' },
     { title: 'New Dividend', desc: 'ETF payout of $412.30 received', time: '3h ago', dot: 'bg-secondary' },
   ];
+
+  // Refresh user data when dropdown opens
+  useEffect(() => {
+    if (dropdownOpen) fetchUser();
+  }, [dropdownOpen]);
 
   return (
     <header className="bg-white/70 backdrop-blur-xl sticky top-0 z-40 shadow-sm flex justify-between items-center px-4 lg:px-8 h-14 w-full font-headline">
@@ -110,13 +146,15 @@ export default function TopBar({ title, onMenuClick }: TopBarProps) {
             className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-surface-container transition-colors"
           >
             <div className="hidden lg:block text-right">
-              <p className="font-bold text-xs text-on-surface leading-tight">Julianne V.</p>
-              <p className="text-[9px] text-on-surface-variant uppercase tracking-tighter">Gold Member</p>
+              <p className="font-bold text-xs text-on-surface leading-tight">{shortName}</p>
+              <p className="text-[9px] text-on-surface-variant uppercase tracking-tighter">Member</p>
             </div>
-            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary-container shadow-sm">
-              <img alt="User profile" className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCYTBSzIurSY7GF8lo1kefDvQpRq7YRy-Yw0MwyrEivZmV0r29Y5YoPwnxJVY7e7wtWugAULdGAJf7pHYsztfFQ2LOE87WXg5sh3rkqAGM0LwPFhIuJInvnBlezILPQAKp2shk9gP1MdOsn5FN-qSyyLfpPzgIWCrjCXVC0nVE2EP1FqLwAagjjbOmSkeysZmWc25ANay6vU4dQpiLj8TwUlIUdnOUffVwipunVqMoDGdc65SijCSGisTvZApFnOZwS6t7I3Ls7w"
-                referrerPolicy="no-referrer" />
+            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary-container shadow-sm bg-primary-container flex items-center justify-center">
+              {userImage ? (
+                <img alt="User profile" className="w-full h-full object-cover" src={userImage} referrerPolicy="no-referrer" />
+              ) : (
+                <span className="text-xs font-bold text-primary">{getInitials(userName)}</span>
+              )}
             </div>
             <ChevronDown className={`w-3.5 h-3.5 text-on-surface-variant transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -133,20 +171,22 @@ export default function TopBar({ title, onMenuClick }: TopBarProps) {
                 {/* Profile Header */}
                 <div className="px-4 py-3 bg-gradient-to-br from-primary-container/30 to-secondary-container/20 border-b border-outline-variant/10">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-primary/20">
-                      <img alt="User" className="w-full h-full object-cover"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCYTBSzIurSY7GF8lo1kefDvQpRq7YRy-Yw0MwyrEivZmV0r29Y5YoPwnxJVY7e7wtWugAULdGAJf7pHYsztfFQ2LOE87WXg5sh3rkqAGM0LwPFhIuJInvnBlezILPQAKp2shk9gP1MdOsn5FN-qSyyLfpPzgIWCrjCXVC0nVE2EP1FqLwAagjjbOmSkeysZmWc25ANay6vU4dQpiLj8TwUlIUdnOUffVwipunVqMoDGdc65SijCSGisTvZApFnOZwS6t7I3Ls7w"
-                        referrerPolicy="no-referrer" />
+                    <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-primary/20 bg-primary-container flex items-center justify-center">
+                      {userImage ? (
+                        <img alt="User" className="w-full h-full object-cover" src={userImage} referrerPolicy="no-referrer" />
+                      ) : (
+                        <span className="text-sm font-bold text-primary">{getInitials(userName)}</span>
+                      )}
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-on-surface">Julianne V. Thorne</p>
-                      <p className="text-[9px] text-on-surface-variant">julianne.thorne@atelier.com</p>
-                      <span className="inline-block mt-0.5 px-1.5 py-0.5 bg-primary-container text-on-primary-container text-[8px] font-bold uppercase tracking-wider rounded-full">Gold Member</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-on-surface truncate">{userName}</p>
+                      <p className="text-[9px] text-on-surface-variant truncate">{userEmail}</p>
+                      <span className="inline-block mt-0.5 px-1.5 py-0.5 bg-primary-container text-on-primary-container text-[8px] font-bold uppercase tracking-wider rounded-full">Member</span>
                     </div>
                   </div>
                   <div className="mt-2.5 flex justify-between text-[10px]">
                     <span className="text-on-surface-variant">Portfolio</span>
-                    <span className="font-bold text-primary">$142,450</span>
+                    <span className="font-bold text-primary">$0.00</span>
                   </div>
                 </div>
 
@@ -165,7 +205,11 @@ export default function TopBar({ title, onMenuClick }: TopBarProps) {
                 {/* Logout */}
                 <div className="border-t border-outline-variant/10 py-1.5">
                   <button
-                    onClick={() => { navigate('/auth'); setDropdownOpen(false); }}
+                    onClick={() => { 
+                      localStorage.removeItem('token');
+                      navigate('/auth'); 
+                      setDropdownOpen(false); 
+                    }}
                     className="w-full flex items-center gap-3 px-4 py-2 text-xs font-bold text-tertiary hover:bg-tertiary/5 transition-colors"
                   >
                     <LogOut className="w-3.5 h-3.5" />

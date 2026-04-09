@@ -49,7 +49,6 @@ export default function AddBudgetForm({ onClose, onSubmit }: AddBudgetFormProps)
     e.preventDefault();
     if (!formData.category) { error('Missing Category', 'Please select a budget category.'); return; }
     onSubmit(formData);
-    success('Budget Created', `${formData.category} budget of $${formData.amount} set for ${formData.period}.`);
     onClose();
   };
 

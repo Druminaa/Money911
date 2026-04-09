@@ -17,6 +17,9 @@ const Goals = lazy(() => import('./pages/Goals'));
 const BorrowLoan = lazy(() => import('./pages/BorrowLoan'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Cash = lazy(() => import('./pages/Cash'));
+const Subscription = lazy(() => import('./pages/Subscription'));
+const Support = lazy(() => import('./pages/Support'));
+const Notifications = lazy(() => import('./pages/Notifications'));
 
 function App() {
   return (
@@ -38,6 +41,9 @@ function App() {
               <Route path="/borrow-loan" element={<BorrowLoan />} />
               <Route path="/cash" element={<Cash />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/subscription" element={<Subscription />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/notifications" element={<Notifications />} />
             </Route>
 
             {/* Fallback */}

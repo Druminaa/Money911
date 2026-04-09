@@ -32,6 +32,7 @@ export default function Goals() {
     try {
       await goalsAPI.create(data);
       success('Goal Created', `${data.title} added to your aspirations`);
+      setShowForm(false);
       fetchGoals();
     } catch (err: any) {
       error('Failed to Create', err.message || 'Could not create goal');

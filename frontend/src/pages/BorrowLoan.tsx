@@ -31,8 +31,16 @@ export default function BorrowLoan() {
 
   const handleSubmit = async (data: any) => {
     try {
-      await loansAPI.create(data);
+      await loansAPI.create({
+        type: formType,
+        name: data.name,
+        amount: parseFloat(data.amount),
+        interest_rate: parseFloat(data.interestRate),
+        duration: data.duration,
+        purpose: data.purpose
+      });
       success('Loan Created', `${data.name} added successfully`);
+      setShowForm(false);
       fetchLoans();
     } catch (err: any) {
       error('Failed to Create', err.message || 'Could not create loan');
@@ -65,11 +73,13 @@ export default function BorrowLoan() {
             <ArrowUpRight className="w-14 h-14 text-primary" />
           </div>
           <p className="text-[9px] font-bold text-primary uppercase tracking-widest mb-1">Total Lent Out</p>
-          <h3 className="text-2xl md:text-3xl font-headline font-black text-on-primary-container tracking-tighter">$42,500.00</h3>
+          <h3 className="text-2xl md:text-3xl font-headline font-black text-on-primary-container tracking-tighter">
+            ${loans.filter(l => l.type === 'lend').reduce((sum, l) => sum + l.amount, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </h3>
           <div className="mt-4 flex items-center gap-4">
-            <div><p className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest mb-0.5">Active Loans</p><p className="text-base font-bold text-on-surface">12</p></div>
+            <div><p className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest mb-0.5">Active Loans</p><p className="text-base font-bold text-on-surface">{loans.filter(l => l.type === 'lend').length}</p></div>
             <div className="h-6 w-px bg-outline-variant/20"></div>
-            <div><p className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest mb-0.5">Avg. Yield</p><p className="text-base font-bold text-primary">8.4%</p></div>
+            <div><p className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest mb-0.5">Avg. Yield</p><p className="text-base font-bold text-primary">{loans.filter(l => l.type === 'lend').length > 0 ? (loans.filter(l => l.type === 'lend').reduce((sum, l) => sum + l.interest_rate, 0) / loans.filter(l => l.type === 'lend').length).toFixed(1) : '0.0'}%</p></div>
           </div>
         </div>
         <div className="bg-tertiary-container/20 p-4 md:p-5 rounded-2xl border border-tertiary/10 relative overflow-hidden group">
@@ -77,11 +87,13 @@ export default function BorrowLoan() {
             <ArrowDownLeft className="w-14 h-14 text-tertiary" />
           </div>
           <p className="text-[9px] font-bold text-tertiary uppercase tracking-widest mb-1">Total Borrowed</p>
-          <h3 className="text-2xl md:text-3xl font-headline font-black text-on-tertiary-container tracking-tighter">$18,200.00</h3>
+          <h3 className="text-2xl md:text-3xl font-headline font-black text-on-tertiary-container tracking-tighter">
+            ${loans.filter(l => l.type === 'borrow').reduce((sum, l) => sum + l.amount, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </h3>
           <div className="mt-4 flex items-center gap-4">
-            <div><p className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest mb-0.5">Active Debts</p><p className="text-base font-bold text-on-surface">03</p></div>
+            <div><p className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest mb-0.5">Active Debts</p><p className="text-base font-bold text-on-surface">{loans.filter(l => l.type === 'borrow').length}</p></div>
             <div className="h-6 w-px bg-outline-variant/20"></div>
-            <div><p className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest mb-0.5">Next Payment</p><p className="text-base font-bold text-tertiary">Oct 28</p></div>
+            <div><p className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest mb-0.5">Avg. Rate</p><p className="text-base font-bold text-tertiary">{loans.filter(l => l.type === 'borrow').length > 0 ? (loans.filter(l => l.type === 'borrow').reduce((sum, l) => sum + l.interest_rate, 0) / loans.filter(l => l.type === 'borrow').length).toFixed(1) : '0.0'}%</p></div>
           </div>
         </div>
       </div>
@@ -100,41 +112,57 @@ export default function BorrowLoan() {
         ) : loans.length === 0 ? (
           <div className="text-center py-12 text-on-surface-variant">No loans yet. Create your first agreement!</div>
         ) : (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {loans.map((item, i) => (
             <motion.div 
               key={item.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
-              className="bg-surface-container-lowest p-5 md:p-6 rounded-2xl shadow-sm border border-outline-variant/10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 hover:shadow-md transition-shadow"
+              className={cn(
+                "bg-surface-container-lowest p-5 rounded-2xl shadow-sm border hover:shadow-md transition-all",
+                item.type === 'lend' ? 'border-primary/20' : 'border-tertiary/20'
+              )}
             >
-              <div className="flex items-center gap-4">
-                <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center bg-surface-container-low", item.type === 'lend' ? 'text-primary' : 'text-tertiary')}>
-                  {item.type === 'lend' ? <ArrowUpRight className="w-5 h-5 md:w-6 md:h-6" /> : <ArrowDownLeft className="w-5 h-5 md:w-6 md:h-6" />}
+              <div className="flex items-start justify-between mb-4">
+                <div className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center",
+                  item.type === 'lend' ? 'bg-primary-container text-primary' : 'bg-tertiary-container text-tertiary'
+                )}>
+                  {item.type === 'lend' ? <ArrowUpRight className="w-6 h-6" /> : <ArrowDownLeft className="w-6 h-6" />}
                 </div>
-                <div>
-                  <h4 className="text-sm md:text-base font-bold text-on-surface">{item.name}</h4>
-                  <p className="text-[10px] md:text-xs text-on-surface-variant font-medium">{item.type === 'lend' ? 'Lending' : 'Borrowing'} • {item.interest_rate}% APR • {item.duration}</p>
-                </div>
+                <span className={cn(
+                  "text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full",
+                  item.type === 'lend' ? 'bg-primary/10 text-primary' : 'bg-tertiary/10 text-tertiary'
+                )}>
+                  {item.status}
+                </span>
               </div>
               
-              <div className="flex-1 w-full md:max-w-xs">
-                <div className="flex justify-between text-[8px] md:text-[10px] font-bold uppercase tracking-widest mb-2">
-                  <span className="text-on-surface-variant">Repayment Progress</span>
+              <h4 className="text-base font-bold text-on-surface mb-1">{item.name}</h4>
+              <p className="text-xs text-on-surface-variant mb-4">
+                {item.type === 'lend' ? 'Lending' : 'Borrowing'} • {item.interest_rate}% APR • {item.duration}
+              </p>
+              
+              <div className="mb-4">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest mb-2">
+                  <span className="text-on-surface-variant">Repayment</span>
                   <span className={item.type === 'lend' ? 'text-primary' : 'text-tertiary'}>{item.progress || 0}%</span>
                 </div>
-                <div className="h-1 md:h-1.5 bg-surface-container rounded-full overflow-hidden">
-                  <div className={cn("h-full rounded-full", item.type === 'lend' ? 'bg-primary' : 'bg-tertiary')} style={{ width: `${item.progress || 0}%` }}></div>
+                <div className="h-1.5 bg-surface-container rounded-full overflow-hidden">
+                  <div 
+                    className={cn("h-full rounded-full", item.type === 'lend' ? 'bg-primary' : 'bg-tertiary')} 
+                    style={{ width: `${item.progress || 0}%` }}
+                  />
                 </div>
               </div>
 
-              <div className="flex justify-between md:block items-center">
-                <div className="md:text-right">
-                  <p className="text-lg md:text-xl font-black text-on-surface">${item.amount.toLocaleString()}</p>
-                  <p className={cn("text-[8px] md:text-[10px] font-bold uppercase tracking-tighter", item.type === 'lend' ? 'text-primary' : 'text-tertiary')}>{item.status}</p>
+              <div className="flex items-center justify-between pt-4 border-t border-outline-variant/10">
+                <div>
+                  <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter">Amount</p>
+                  <p className="text-xl font-black text-on-surface">${item.amount.toLocaleString()}</p>
                 </div>
-                <button className="p-2 hover:bg-surface-container rounded-full transition-colors md:ml-4">
+                <button className="p-2 hover:bg-surface-container rounded-full transition-colors">
                   <Info className="w-5 h-5 text-on-surface-variant" />
                 </button>
               </div>

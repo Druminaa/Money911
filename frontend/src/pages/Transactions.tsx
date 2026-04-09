@@ -99,13 +99,91 @@ export default function Transactions() {
   const netSurplus = summary.net_surplus;
 
   const handleExportCSV = () => {
-    const rows = [['Date', 'Name', 'Category', 'Status', 'Amount'], ...transactions.map(t => [t.date, t.name, t.cat, t.status, fmt(t.amount)])];
+    const rows = [['Date', 'Name', 'Category', 'Status', 'Amount'], ...filtered.map(t => [t.date, t.name, t.cat, t.status, fmt(t.amount)])];
     const csv = rows.map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'transactions.csv'; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`; a.click();
     URL.revokeObjectURL(url);
     success('CSV Downloaded', 'Your transactions have been exported.');
+  };
+
+  const handleExportPDF = () => {
+    const doc = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Transactions Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; color: #2c3436; }
+    h1 { color: #0145f2; font-size: 28px; margin-bottom: 10px; }
+    .meta { color: #596063; font-size: 12px; margin-bottom: 30px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th { background: #f0f4f6; padding: 12px; text-align: left; font-size: 11px; text-transform: uppercase; font-weight: bold; color: #596063; }
+    td { padding: 12px; border-bottom: 1px solid #eaeff0; font-size: 13px; }
+    .income { color: #0145f2; font-weight: bold; }
+    .expense { color: #2c3436; font-weight: bold; }
+    .summary { margin-top: 30px; padding: 20px; background: #f8fafb; border-radius: 8px; }
+    .summary-item { display: inline-block; margin-right: 40px; }
+    .summary-label { font-size: 11px; color: #596063; text-transform: uppercase; }
+    .summary-value { font-size: 20px; font-weight: bold; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Transactions Report</h1>
+  <div class="meta">Generated on ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} | Total: ${filtered.length} transactions</div>
+  
+  <div class="summary">
+    <div class="summary-item">
+      <div class="summary-label">Total Income</div>
+      <div class="summary-value" style="color: #0145f2;">${fmt(totalIncome)}</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">Total Expenses</div>
+      <div class="summary-value" style="color: #9f403a;">-$${totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">Net Surplus</div>
+      <div class="summary-value" style="color: #006499;">$${netSurplus.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Description</th>
+        <th>Category</th>
+        <th>Status</th>
+        <th style="text-align: right;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${filtered.map(t => `
+        <tr>
+          <td>${t.date}</td>
+          <td>${t.name}</td>
+          <td>${t.cat}</td>
+          <td>${t.status}</td>
+          <td style="text-align: right;" class="${t.type}">${fmt(t.amount)}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+</body>
+</html>
+    `;
+    const blob = new Blob([doc], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank');
+    if (win) {
+      win.onload = () => {
+        win.print();
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      };
+    }
+    success('PDF Ready', 'Print dialog opened for PDF export.');
   };
 
   return (
@@ -183,7 +261,7 @@ export default function Transactions() {
             <button onClick={handleExportCSV} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-on-surface text-surface text-xs font-semibold rounded-full hover:bg-on-surface-variant transition-colors">
               <Download className="w-3.5 h-3.5" /><span>CSV</span>
             </button>
-            <button className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 border border-outline-variant/20 text-on-surface text-xs font-semibold rounded-full hover:bg-surface-container transition-colors">
+            <button onClick={handleExportPDF} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 border border-outline-variant/20 text-on-surface text-xs font-semibold rounded-full hover:bg-surface-container transition-colors">
               <FileText className="w-3.5 h-3.5" /><span>PDF</span>
             </button>
           </div>
